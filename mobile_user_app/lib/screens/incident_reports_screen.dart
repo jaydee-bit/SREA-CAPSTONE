@@ -25,7 +25,6 @@ class _IncidentReportsScreenState extends State<IncidentReportsScreen> {
   }
 
   Future<void> _loadReports() async {
-    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -54,32 +53,23 @@ class _IncidentReportsScreenState extends State<IncidentReportsScreen> {
             personsInvolved: json['persons_involved'],
             reporterRole: reporter['role'] ?? '',
             reporterIsVerified: reporter['is_verified'] ?? false,
+            assignedToName: json['assigned_to'] != null
+                ? (json['assigned_to']['name'] as String?)
+                : null,
           );
         }).toList();
-
-        // Sort: active (Pending, Under Review) newest first, resolved/rejected at bottom
-        incidents.sort((a, b) {
-          const sunk = {'resolved', 'rejected'};
-          final aS = sunk.contains(a.status.toLowerCase());
-          final bS = sunk.contains(b.status.toLowerCase());
-          if (aS != bS) return aS ? 1 : -1;
-          return b.reportedAt.compareTo(a.reportedAt);
-        });
-
-        if (!mounted) return;
         setState(() {
           _reports = incidents;
           _isLoading = false;
         });
       } else {
-        if (!mounted) return;
         setState(() {
           _reports = [];
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (!mounted) return;
+      print('Error loading incidents: $e');
       setState(() {
         _error = 'Failed to load incidents. Pull to refresh.';
         _isLoading = false;
@@ -121,7 +111,9 @@ class _IncidentReportsScreenState extends State<IncidentReportsScreen> {
               child: Material(
                 elevation: 4,
                 borderRadius: SreaRadius.button,
-                shadowColor: SreaColors.buttonReport.withOpacity(0.4),
+                shadowColor: SreaColors.buttonReport.withOpacity(
+                  0.4,
+                ), // fixed for older Flutter
                 child: SreaButton.report(
                   label: 'Report Incident',
                   onPressed: () {
@@ -187,12 +179,13 @@ class _IncidentReportsScreenState extends State<IncidentReportsScreen> {
   }
 }
 
-// ─── Restructured Report Card (matches HTML mockup) ──────────────
+// ─── Report Card with larger thumbnail on the right of description ───
 class _ReportCard extends StatelessWidget {
   final IncidentReport report;
   final VoidCallback onTap;
   const _ReportCard({required this.report, required this.onTap});
 
+  // Helper to get full image URL from relative path
   String _getThumbnailUrl() {
     final path = report.photoPath;
     if (path == null || path.isEmpty) return '';
@@ -209,56 +202,65 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final thumbSize = width * 0.19; // ~76px on 400px screen
-    final thumbRadius = width * 0.018; // ~8px
-    final innerGap = width * 0.012;
-
-    // Reporter badge
-    String reporterLabel;
-    Color reporterColor;
+    String descriptionPreview = report.description.length > 80
+        ? '${report.description.substring(0, 80)}...'
+        : report.description;
+    String reporterBadgeText;
+    Color reporterBadgeColor;
     if (report.reporterRole == 'resident') {
       if (report.reporterIsVerified) {
-        reporterLabel = 'Verified Resident';
-        reporterColor = SreaColors.low;
+        reporterBadgeText = 'Verified Resident';
+        reporterBadgeColor = SreaColors.low;
       } else {
-        reporterLabel = 'Unverified Resident';
-        reporterColor = SreaColors.medium;
+        reporterBadgeText = 'Unverified Resident';
+        reporterBadgeColor = SreaColors.medium;
       }
     } else {
-      reporterLabel = 'Non-Resident';
-      reporterColor = SreaColors.textHint;
+      reporterBadgeText = 'Non-Resident';
+      reporterBadgeColor = SreaColors.textHint;
     }
-
-    final description = report.description.length > 120
-        ? '${report.description.substring(0, 120)}...'
-        : report.description;
 
     final thumbnailUrl = _getThumbnailUrl();
     final hasPhoto = thumbnailUrl.isNotEmpty;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: SreaSpacing.sm(context)),
+      padding: const EdgeInsets.only(bottom: 12),
       child: SreaCard(
         onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Row 1: Type + stacked badges
+            // Top row: type, barangay, date, status, reporter badge (unchanged)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    report.type,
-                    style: SreaText.bodyLarge(
-                      context,
-                    ).copyWith(fontWeight: FontWeight.w700),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        report.type,
+                        style: SreaText.bodyLarge(
+                          context,
+                        ).copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        report.barangay,
+                        style: SreaText.bodySmall(
+                          context,
+                        ).copyWith(color: SreaColors.textSecondary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatDate(report.reportedAt),
+                        style: SreaText.label(
+                          context,
+                        ).copyWith(color: SreaColors.textHint),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(width: width * 0.02),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -267,24 +269,21 @@ class _ReportCard extends StatelessWidget {
                       label: report.status,
                       showDot: true,
                     ),
-                    SizedBox(height: width * 0.008),
+                    const SizedBox(height: 4),
                     Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: width * 0.015,
-                        vertical: width * 0.005,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: reporterColor.withOpacity(0.1),
+                        color: reporterBadgeColor.withOpacity(0.1),
                         borderRadius: SreaRadius.pill,
-                        border: reporterLabel == 'Non-Resident'
-                            ? Border.all(color: SreaColors.border, width: 0.5)
-                            : null,
                       ),
                       child: Text(
-                        reporterLabel,
+                        reporterBadgeText,
                         style: SreaText.label(context).copyWith(
-                          color: reporterColor,
-                          fontSize: width * 0.022,
+                          color: reporterBadgeColor,
+                          fontSize: 9,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -293,108 +292,74 @@ class _ReportCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: innerGap),
-
-            // Row 2: Left text + Right thumbnail
+            // Description + thumbnail (side by side, thumbnail larger)
+            const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left: text block
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Barangay · Date
-                      Text(
-                        '${report.barangay}  ·  ${_formatDate(report.reportedAt)}',
-                        style: SreaText.label(
-                          context,
-                        ).copyWith(color: SreaColors.textSecondary),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      SizedBox(height: innerGap),
-
-                      // Description (max 3 lines)
-                      Text(
-                        description,
-                        style: SreaText.bodySmall(context).copyWith(
-                          color: SreaColors.textSecondary,
-                          height: 1.45,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      // Optional location details
-                      if (report.locationDetails != null &&
-                          report.locationDetails!.isNotEmpty) ...[
-                        SizedBox(height: innerGap),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: width * 0.03,
-                              color: SreaColors.textHint,
-                            ),
-                            SizedBox(width: width * 0.01),
-                            Expanded(
-                              child: Text(
-                                report.locationDetails!,
-                                style: SreaText.label(
-                                  context,
-                                ).copyWith(color: SreaColors.textHint),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
+                  child: Text(
+                    descriptionPreview,
+                    style: SreaText.bodySmall(
+                      context,
+                    ).copyWith(color: SreaColors.textSecondary, height: 1.4),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                SizedBox(width: SreaSpacing.sm(context)),
-                // Right: thumbnail (fixed size)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(thumbRadius),
-                  child: Container(
-                    width: thumbSize,
-                    height: thumbSize,
-                    color: SreaColors.surfaceVariant,
-                    child: hasPhoto
-                        ? Image.network(
-                            thumbnailUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(
-                              Icons.broken_image_outlined,
-                              size: thumbSize * 0.42,
-                              color: SreaColors.textHint,
-                            ),
-                          )
-                        : Icon(
-                            Icons.image_not_supported_outlined,
-                            size: thumbSize * 0.42,
-                            color: SreaColors.textHint,
-                          ),
+                if (hasPhoto) ...[
+                  const SizedBox(width: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(SreaRadius.sm),
+                    child: Image.network(
+                      thumbnailUrl,
+                      width: 80, // larger thumbnail
+                      height: 80, // larger thumbnail
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.broken_image,
+                        size: 40,
+                        color: SreaColors.textHint,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
-
-            SizedBox(height: innerGap * 1.2),
-            const Divider(height: 1, color: SreaColors.divider),
-            SizedBox(height: innerGap),
-
-            // View details button
+            // Location details (if any)
+            if (report.locationDetails != null &&
+                report.locationDetails!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 12,
+                    color: SreaColors.textHint,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      report.locationDetails!,
+                      style: SreaText.label(
+                        context,
+                      ).copyWith(color: SreaColors.textHint),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: onTap,
                 style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: SreaSpacing.sm(context),
-                    vertical: width * 0.012,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -416,7 +381,6 @@ class _ReportCard extends StatelessWidget {
 
   String _formatDate(DateTime date) =>
       '${_monthAbbr(date.month)} ${date.day}, ${date.year}';
-
   String _monthAbbr(int m) => const [
     'Jan',
     'Feb',
@@ -431,7 +395,6 @@ class _ReportCard extends StatelessWidget {
     'Nov',
     'Dec',
   ][m - 1];
-
   SreaBadgeType _statusToBadgeType(String status) {
     switch (status.toLowerCase()) {
       case 'resolved':

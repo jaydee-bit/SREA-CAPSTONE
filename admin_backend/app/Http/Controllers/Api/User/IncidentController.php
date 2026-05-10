@@ -61,12 +61,11 @@ class IncidentController extends Controller
     /**
      * Get a single incident (with full details, including assigned responder).
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $incident = Incident::with(['reporter', 'assignedTo'])->findOrFail($id);
 
-        // Security: only the owner or an admin can view
-        if ($incident->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+        if ($incident->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

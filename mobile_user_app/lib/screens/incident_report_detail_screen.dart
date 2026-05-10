@@ -170,6 +170,109 @@ class IncidentReportDetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              // Responder info — shown only when assigned
+              if (report.assignedToName != null &&
+                  report.assignedToName!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: SreaColors.primaryLight,
+                    borderRadius: SreaRadius.input,
+                    border: Border.all(
+                      color: SreaColors.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: SreaColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.verified_user_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Responder Assigned',
+                              style: SreaText.label(context).copyWith(
+                                color: SreaColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              report.assignedToName!,
+                              style: SreaText.bodySmall(context).copyWith(
+                                color: SreaColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: SreaColors.lowBg,
+                          borderRadius: SreaRadius.pill,
+                        ),
+                        child: Text(
+                          'On it',
+                          style: SreaText.label(context).copyWith(
+                            color: SreaColors.low,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: SreaColors.surfaceVariant,
+                    borderRadius: SreaRadius.input,
+                    border: Border.all(color: SreaColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.hourglass_empty_rounded,
+                        size: 16,
+                        color: SreaColors.textHint,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Awaiting responder assignment',
+                        style: SreaText.bodySmall(
+                          context,
+                        ).copyWith(color: SreaColors.textHint),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 20),
               Text(
                 'Description',

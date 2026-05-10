@@ -12,8 +12,9 @@ class IncidentReport {
   final String status;
   final DateTime reportedAt;
   final int? personsInvolved;
-  final String reporterRole; // 'resident' or 'non_resident'
+  final String reporterRole;
   final bool reporterIsVerified;
+  final String? assignedToName; // responder handling this incident
 
   IncidentReport({
     required this.id,
@@ -29,5 +30,6 @@ class IncidentReport {
     this.personsInvolved,
     required this.reporterRole,
     required this.reporterIsVerified,
+    this.assignedToName,
   });
 }
