@@ -1,0 +1,207 @@
+// File: alert_detail_screen.dart
+// Path: mobile_user_app/lib/screens/alert_detail_screen.dart
+
+import 'package:flutter/material.dart';
+import 'package:srea_shared/srea_shared.dart';
+
+class AlertDetailScreen extends StatelessWidget {
+  final Map<String, dynamic> alert;
+
+  const AlertDetailScreen({super.key, required this.alert});
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return '';
+    try {
+      final date = DateTime.parse(dateString);
+      return '${_monthAbbr(date.month)} ${date.day}, ${date.year}';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  String _monthAbbr(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months[month - 1];
+  }
+
+  SreaBadgeType _getBadgeType(String? level) {
+    switch (level?.toLowerCase()) {
+      case 'critical':
+        return SreaBadgeType.critical;
+      case 'high':
+        return SreaBadgeType.high;
+      case 'medium':
+        return SreaBadgeType.medium;
+      default:
+        return SreaBadgeType.low;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final level = alert['level'] ?? 'low';
+    final badgeType = _getBadgeType(level);
+    final isBarangaySpecific =
+        alert['barangay'] != null && alert['barangay'].isNotEmpty;
+    final formattedDate = _formatDate(alert['created_at']);
+
+    return Scaffold(
+      backgroundColor: SreaColors.background,
+      appBar: AppBar(
+        backgroundColor: SreaColors.primary,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: SreaColors.textOnPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Alert Details',
+          style: SreaText.titleLarge(
+            context,
+          ).copyWith(color: SreaColors.textOnPrimary),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              Text(
+                alert['title'] ?? '',
+                style: SreaText.headlineSmall(context).copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: SreaColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Severity badge + date
+              Row(
+                children: [
+                  SreaBadge(
+                    type: badgeType,
+                    label: level.toUpperCase(),
+                    showDot: true,
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 14,
+                        color: SreaColors.textHint,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        formattedDate,
+                        style: SreaText.bodySmall(
+                          context,
+                        ).copyWith(color: SreaColors.textHint),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Barangay if specific
+              if (isBarangaySpecific)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: SreaColors.primaryLight,
+                    borderRadius: SreaRadius.input,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: SreaColors.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          alert['barangay'],
+                          style: SreaText.bodySmall(context).copyWith(
+                            color: SreaColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 20),
+              // Description
+              Text(
+                alert['description'] ?? '',
+                style: SreaText.bodyLarge(
+                  context,
+                ).copyWith(color: SreaColors.textPrimary, height: 1.6),
+              ),
+              const SizedBox(height: 32),
+              // MDRRMO contact footer
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: SreaColors.primaryLight,
+                  borderRadius: SreaRadius.input,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.phone_in_talk_rounded,
+                      size: 20,
+                      color: SreaColors.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'For questions, contact MDRRMO',
+                            style: SreaText.bodySmall(context).copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: SreaColors.primary,
+                            ),
+                          ),
+                          Text(
+                            '(044) 123-4567',
+                            style: SreaText.label(
+                              context,
+                            ).copyWith(color: SreaColors.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
