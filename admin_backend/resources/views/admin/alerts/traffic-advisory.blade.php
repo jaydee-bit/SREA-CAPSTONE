@@ -21,8 +21,8 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div class="alert-tabs d-inline-flex gap-2 border rounded p-1" style="background:#F0F2F7;">
-        <a href="{{ backpack_url('send-alert') }}">📣 Send Alert</a>
-        <a href="{{ backpack_url('traffic-advisory') }}" class="active">🚧 Traffic Advisory</a>
+        <a href="{{ backpack_url('send-alert') }}"> Send Alert</a>
+        <a href="{{ backpack_url('traffic-advisory') }}" class="active"> Traffic Advisory</a>
     </div>
     <button type="button" class="btn" style="background:#1CA97B; color:#fff;" onclick="openAdvisoryModal()">+ Add Traffic Advisory</button>
 </div>

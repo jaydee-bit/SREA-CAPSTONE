@@ -12,7 +12,7 @@
 
         {{-- Logo: replace public/images/srea-logo.png with your own file, same filename --}}
         <div class="flex justify-center mb-6">
-            <img src="{{ asset('images/srea-logo.png') }}" alt="SREA Logo" class="h-20">
+            <img src="{{ asset('images/logo.png') }}" alt="SREA Logo" class="h-20">
         </div>
 
         @if ($errors->any())

@@ -69,7 +69,7 @@
                                     {{ $incident['status'] === 'responding' ? 'Responding' : 'Waiting for Response' }}
                                 </span>
                             </td>
-                            <<td>{{ $incident['assigned']['name'] ?? '-' }}</td>
+                            <td>{{ $incident['assigned']['name'] ?? '-' }}</td>
                             <td>{{ $incident['time'] }}</td>
                             <td>
                                 @if ($incident['assigned'])
